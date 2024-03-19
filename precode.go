@@ -48,11 +48,43 @@ func mainHandle(w http.ResponseWriter, req *http.Request) {
 
 func TestMainHandlerWhenCountMoreThanTotal(t *testing.T) {
     totalCount := 4
-    req := ... // здесь нужно создать запрос к сервису
+    req := 	req, err := http.NewRequest("GET", "/cafe?count=10&city=moscow", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
     responseRecorder := httptest.NewRecorder()
     handler := http.HandlerFunc(mainHandle)
     handler.ServeHTTP(responseRecorder, req)
 
-    // здесь нужно добавить необходимые проверки
+    assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	assert.Equal(t, totalCount, len(strings.Split(responseRecorder.Body.String(), ",")))
 }
+func TestMainHandlerValidRequest(t *testing.T) {
+	req, err := http.NewRequest("GET", "/cafe?count=2&city=moscow", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseRecorder := httptest.NewRecorder()
+	handler := http.HandlerFunc(mainHandle)
+	handler.ServeHTTP(responseRecorder, req)
+
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	assert.NotEmpty(t, responseRecorder.Body.String())
+}
+
+func TestMainHandlerUnsupportedCity(t *testing.T) {
+	req, err := http.NewRequest("GET", "/cafe?count=2&city=moscowski", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseRecorder := httptest.NewRecorder()
+	handler := http.HandlerFunc(mainHandle)
+	handler.ServeHTTP(responseRecorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	assert.Equal(t, "wrong city value", responseRecorder.Body.String())
+}
+
